@@ -122,7 +122,7 @@ begin
 end 
 
 assign fill_now = ((PS==FIX) || (PS==CONVOLUTE)) ? 1'b0 : 1'b1;
-//storage is full when PS is in FIX nd CONVOLUTE states.
+//storage is full when PS is in FIX and CONVOLUTE states.
 assign Dout = (PS==CONVOLUTE) ? result : 16'hzzzz;
 //output data is available when PS is in CONVOLUTE state.
 
