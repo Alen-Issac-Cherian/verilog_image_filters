@@ -31,10 +31,10 @@ module BRWM(
   input pause,                    // an active high signal that tells the module to pause whatever operation it is doing. Driven by Grayscaler
   input [7:0] data_in,            // input data bus. Comes from the camera
   output [7:0] data_out,          // ouput data bus. Connected to Grayscaling module
-  output done                     // after the completion of an operation done is set to 1. It is a status signal to drive the controller
+  output reg done                 // after the completion of an operation done is set to 1. It is a status signal to drive the controller
   );      
 
-parameter N = 5, M = 5;           // Height and width of the image
+parameter N = 2, M = 2;           // Height and width of the image
 reg [7:0] DATA[0:(3*N*M - 1)];    // BRWM register array
 
 reg [2:0] CS, NS;                 // BRWM state variables
@@ -42,8 +42,7 @@ reg [2:0] CS, NS;                 // BRWM state variables
 parameter INACTIVE = 3'b000, READ = 3'b001, WRITE = 3'b010, WAIT = 3'b011, CLEANUP = 3'b100; //BRWM states
 
 integer i;                        // Loop variable for addressing the BRWM register array
-reg [7:0] out;
-reg finish;
+reg [7:0] cache_out, cache_in;
 
 // Sequential Logic
 always @(negedge clk)
@@ -55,17 +54,18 @@ end
 
 always @(negedge clk) 
 begin
+  cache_in <= data_in;
  case (CS)
  CLEANUP: begin
-           DATA[i] <= 8'h00;                          // Clearing BRWM registers
+           DATA[i] <= 8'h00;                                 // Clearing BRWM registers
            i <= (i == 3*N*M) ? 0 : i + 1;
           end
  WRITE: begin
-         DATA[i] <= data_in + i;                      // Writing into BRWM 
+         DATA[i] <= cache_in;                               // Writing into BRWM 
          i <= (i == 3*N*M) ? 0 : i + 1;
         end
  READ: begin
-        out <= DATA[i];                               // Reading from BRWM
+        cache_out <= DATA[i];                               // Reading from BRWM
         i <= (i == 3*N*M) ? 0 : i + 1;
        end
  endcase
@@ -77,7 +77,7 @@ begin
   case (CS)
   INACTIVE: begin                                                      
              i = 0;
-             finish = 1'b0;
+             done = 1'b0;
              if (on_off == 1'b0)
               NS = INACTIVE;
              else
@@ -89,30 +89,29 @@ begin
             end
   WRITE: begin                                                      
           NS = (i == 3*N*M) ? INACTIVE : WRITE;
-          finish = (i == 3*N*M) ? 1'b1 : 1'b0;
+          done = (i == 3*N*M) ? 1'b1 : 1'b0;
          end
   READ: begin                                                      
          if (pause)
           NS = WAIT;
          else NS = (i == 3*N*M) ? INACTIVE : READ;
-         finish = (i == 3*N*M) ? 1'b1 : 1'b0;
+         done = (i == 3*N*M) ? 1'b1 : 1'b0;
         end
   WAIT: begin
          i = i;
-         finish = 1'b0;
+         done = 1'b0;
          if (pause == 1'b0)
           NS = READ;
          else NS = WAIT;
         end
   CLEANUP: begin                                                      
             NS = (i == 3*N*M) ? INACTIVE : CLEANUP;
-            finish = (i == 3*N*M) ? 1'b1 : 1'b0;
+            done = (i == 3*N*M) ? 1'b1 : 1'b0;
            end
   default: NS = INACTIVE;
   endcase
 end
 
-assign data_out = (CS == READ) ? out : 8'hzz;
-assign done = finish;
+assign data_out = (CS == READ) ? cache_out : 8'hzz;
 
 endmodule
