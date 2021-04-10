@@ -8,11 +8,12 @@ module camera(
   output reg [7:0] data_out);                 // output data bus
 
 
-/*reg [7:0] DATA [0:11];                        // Camera Data
+reg [7:0] DATA [0:11];                        // Camera Data
 integer ptr;
 
 initial
 begin
+  ptr <= 0;
   DATA[0] <= 8'hBC;
   DATA[1] <= 8'h27;
   DATA[2] <= 8'h81;
@@ -25,24 +26,24 @@ begin
   DATA[9] <= 8'h2B;
   DATA[10] <= 8'hD4;
   DATA[11] <= 8'h11;
-end*/
+end
 
-always @(negedge clk)
+always @(posedge clk)
 begin
  if(camera_en)
  begin
   data_valid <= 1'b1;
-  data_out <= 8'h00; //DATA[ptr];
-  //ptr <= ptr + 1;
+  data_out <= DATA[ptr];
+  ptr <= ptr + 1;
  end
  else 
  begin
   data_valid <= 1'b0;
-  //ptr <= 0;
+  ptr <= 0;
   data_out <= 8'hzz;
  end
- //if(ptr == 12)
-  //ptr <= 0;
+ if(ptr == 12)
+  ptr <= 0;
 end
 
 
