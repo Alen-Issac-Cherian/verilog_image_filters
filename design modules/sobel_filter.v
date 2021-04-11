@@ -20,7 +20,7 @@ module sobel_filter(
 
 reg [15:0] result;
 
-parameter N = 720, M = 120; //resolution of the image
+parameter N = 5, M = 5; //resolution of the image
 
 reg [7:0] storage[0:N*M-1]; //reg array to store the image pixels in a frame of operation
 reg [7:0] image_kernal[0:8];    //reg array to house the 9 bytes for the sobel convolution
