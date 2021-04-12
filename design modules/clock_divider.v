@@ -13,7 +13,7 @@ begin
  if (erst)
   counter <= 0;
  else counter <= counter + 1;
- if (counter >= 4,99,99,999)
+ if (counter >= 49999999)
   counter <= 0;
 end
 
