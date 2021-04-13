@@ -14,7 +14,6 @@ module sobel_filter(
     input [7:0] Din,
     input data_valid, rst, clk,
     output fill_now,    //status signal to indicate whether the first reg matrix is empty or not
-    output reg [1:0] state, //to know in which state the FSM is in
     output [15:0] Dout
 );
 
@@ -45,6 +44,7 @@ begin
   storage[i] <= Din;    //to store the incoming pixel byte into the next position in the storage array
   i <= (i == 24) ? 0 : i + 1;
  end
+ else i <= 0;
 end
 
 //combinatorial logic
@@ -52,11 +52,8 @@ always @(Din,data_valid,i,count,k,PS)
 begin
  case (PS)
  IDLE: begin
-        state = 2'b00;
-
         result = 16'h0000;
         count = 0;  //to count the number of convolutions in a frame
-        i = 0;  
         j = 0;
         k = 0;
         
@@ -65,11 +62,9 @@ begin
         else NS = IDLE;
        end
  STORE: begin
-         state = 2'b01;
          NS = (i == 24) ? FIX : STORE;  
         end
  FIX: begin
-       state = 2'b10;
        //to place the the required bytes in the kernal for convolution
        image_kernal[0] = storage[j];
        image_kernal[1] = storage[j+1];
@@ -84,7 +79,6 @@ begin
        NS = CONVOLUTE;
       end
  CONVOLUTE: begin
-             state = 2'b11;
              result = image_kernal[0] + 2*image_kernal[1] + image_kernal[2] - image_kernal[6] - 2*image_kernal[7] - image_kernal[8];
              count = count + 1; 
              if(count != (N-2)*(M-2))
