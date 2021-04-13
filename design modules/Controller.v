@@ -14,21 +14,21 @@ output reg camera_trigger       //status signal to the camera
 parameter [1:0] IDLE = 2'b00, CAMERA_READ = 2'b01, GRAY_WRITE = 2'b10;
 reg [1:0] CS, NS;
 
-always @(posedge clk or posedge erst)
+always @(posedge clk or negedge erst)
 begin
- if (erst)
+ if (!erst)
   CS <= IDLE;
  else CS <= NS;
 end
 
-always @(start, done)
+always @(CS, start, done)
 begin
  case(CS)
  IDLE: begin
         on_off = 1'b0;
         rw = 1'bz;
         camera_trigger = 1'b0;
-        if (start == 1'b1)
+        if (!start == 1'b1)
          NS = CAMERA_READ;
         else NS = IDLE;
        end
